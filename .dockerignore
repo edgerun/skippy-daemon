@@ -2,6 +2,7 @@
 .git
 .gitignore
 .idea
-Dockerfile
+Dockerfile.*
+build.sh
 README.md
 k8s-skippy-daemon.yaml

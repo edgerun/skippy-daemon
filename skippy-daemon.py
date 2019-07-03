@@ -13,8 +13,6 @@ from kubernetes.client.rest import ApiException
 
 def get_cuda_version() -> (str, str):
     try:
-        # TODO test if the daemonset pods are scheduled to pods which cannot fulfill the volume mounts.
-        #     if not, change the mount to /usr/local
         with open('/usr/local/cuda/version.txt', 'r') as version_file:
             version_str = version_file.read()
             version_re = re.search(r'^CUDA Version ([0-9]+).[0-9]+.[0-9]+', version_str)
@@ -31,8 +29,6 @@ def get_cuda_version() -> (str, str):
 
 
 def check_nvidia_gpu() -> (str, str):
-    # TODO test if the daemonset pods are scheduled to pods which cannot fulfill the volume mounts.
-    #      if not, change the check if "/usr/bin/nvidia-smi" exists (and set it on the tegra tx2)
     if which('nvidia-smi'):
         logging.debug('capability.skippy.io/nvidia-gpu: Found nvidia-smi')
         return 'capability.skippy.io/nvidia-gpu', ''

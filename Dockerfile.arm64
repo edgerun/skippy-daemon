@@ -1,0 +1,12 @@
+FROM arm64v8/python:3.7-alpine
+COPY --from=multiarch/qemu-user-static:x86_64-aarch64 /usr/bin/qemu-* /usr/bin
+
+WORKDIR /usr/src/app
+
+COPY requirements.txt ./
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+ENTRYPOINT [ "python", "skippy-daemon.py"]
