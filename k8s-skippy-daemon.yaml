@@ -1,0 +1,64 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: cr-skippy-daemon
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["watch", "get", "list", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: labeller
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cr-skippy-daemon
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: default
+- kind: ServiceAccount
+  name: default
+  namespace: kube-system
+---
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: skippy-daemon-daemonset
+  namespace: kube-system
+spec:
+  template:
+    metadata:
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      labels:
+        name: skippy-daemon
+    spec:
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+      - key: "node-role.kubernetes.io/master"
+        operator: "Exists"
+      containers:
+      - image: alexrashed/skippy-daemon:0.1
+        name: skippy-daemon
+        volumeMounts:
+          - name: cuda
+            mountPath: /usr/local/cuda
+          - name: nvidia-smi
+            mountPath: /usr/local/bin/nvidia-smi
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+      volumes:
+        - name: cuda
+          hostPath:
+            path: /usr/local/cuda
+        - name: nvidia-smi
+          hostPath:
+            path: /usr/local/bin/nvidia-smi

@@ -1,0 +1,7 @@
+.venv
+.git
+.gitignore
+.idea
+Dockerfile
+README.md
+k8s-skippy-daemon.yaml
