@@ -60,7 +60,7 @@ spec:
       - key: node.kubernetes.io/unschedulable
         effect: NoSchedule
       containers:
-      - image: alexrashed/skippy-daemon:0.1
+      - image: alexrashed/skippy-daemon:0.3
         name: skippy-daemon
         args: ['-d']
         volumeMounts:

@@ -8,10 +8,12 @@ import re
 from shutil import which
 
 from kubernetes import config, client
+from kubernetes.client import V1Node
 from kubernetes.client.rest import ApiException
 
 
-def get_cuda_version() -> (str, str):
+def get_cuda_version(api: client.CoreV1Api, node_name: str) -> (str, str):
+    # Set the label "capability.skippy.io/nvidia-cuda" with the version of CUDA as a value (if installed)
     try:
         with open('/usr/local/cuda/version.txt', 'r') as version_file:
             version_str = version_file.read()
@@ -28,7 +30,8 @@ def get_cuda_version() -> (str, str):
     return 'capability.skippy.io/nvidia-cuda', None
 
 
-def check_nvidia_gpu() -> (str, str):
+def check_nvidia_gpu(api: client.CoreV1Api, node_name: str) -> (str, str):
+    # Set the label "capability.skippy.io/nvidia-gpu" if the binary "nvidia-smi" is found
     if which('nvidia-smi'):
         logging.debug('capability.skippy.io/nvidia-gpu: Found nvidia-smi')
         return 'capability.skippy.io/nvidia-gpu', ''
@@ -37,13 +40,24 @@ def check_nvidia_gpu() -> (str, str):
         return 'capability.skippy.io/nvidia-gpu', None
 
 
-labelling_functions = [get_cuda_version, check_nvidia_gpu]
+def edge_label(api: client.CoreV1Api, node_name: str) -> (str, str):
+    # Set the edge label if no locality type is set yet.
+    status: V1Node = api.read_node(node_name)
+    try:
+        # noinspection PyStatementEffect
+        status.metadata.labels['locality.skippy.io/type']
+        logging.debug('locality.skippy.io/type: Already present, not doing anything here...')
+    except KeyError:
+        logging.debug('locality.skippy.io/type: Not yet set. Using default value (edge).')
+        return 'locality.skippy.io/type', 'edge'
 
 
-def set_labels(node_name: str, labels: Dict[str, str]):
+labelling_functions = [get_cuda_version, check_nvidia_gpu, edge_label]
+
+
+def set_labels(api: client.CoreV1Api, node_name: str, labels: Dict[str, str]):
     try:
         logging.info(f'Updating labels for node {node_name}: {labels}...')
-        api = client.CoreV1Api()
         body = {
             "metadata": {
                 "labels": labels
@@ -83,6 +97,8 @@ def main():
         logging.debug('Loading in-cluster config...')
         config.load_incluster_config()
 
+    api = client.CoreV1Api()
+
     old_labels = None
     while True:
         try:
@@ -92,14 +108,14 @@ def main():
             # Create the dict with all labels
             labels = {}
             for fn in labelling_functions:
-                label = fn()
+                label = fn(api, node_name)
                 if label is not None:
                     labels[label[0]] = label[1]
 
             # Only patch the labels if they've changed
             if labels != old_labels:
                 # Set the labels on the current node
-                set_labels(node_name, labels)
+                set_labels(api, node_name, labels)
                 old_labels = labels
             else:
                 logging.debug('Labels have not changed. No update necessary.')
