@@ -52,7 +52,20 @@ def edge_label(api: client.CoreV1Api, node_name: str) -> (str, str):
         return 'locality.skippy.io/type', 'edge'
 
 
-labelling_functions = [get_cuda_version, check_nvidia_gpu, edge_label]
+def storage_node_label(api: client.CoreV1Api, node_name: str) -> (str, str):
+    # Set the edge label if no locality type is set yet.
+    field_selector = 'spec.nodeName=' + node_name
+    label_selector = 'app=minio'
+    pods = api.list_pod_for_all_namespaces(watch=False, field_selector=field_selector, label_selector=label_selector)
+    if len(pods.items) > 0:
+        logging.debug('data.skippy.io/storage-node: Found a storage pod on the node. Setting label.')
+        return 'data.skippy.io/storage-node', ''
+    else:
+        logging.debug('data.skippy.io/storage-node: No storage pod found on the node. Removing label.')
+        return 'data.skippy.io/storage-node', None
+
+
+labelling_functions = [get_cuda_version, check_nvidia_gpu, edge_label, storage_node_label]
 
 
 def set_labels(api: client.CoreV1Api, node_name: str, labels: Dict[str, str]):

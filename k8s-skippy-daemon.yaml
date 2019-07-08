@@ -10,7 +10,7 @@ metadata:
   name: skippy-daemon
 rules:
 - apiGroups: [""]
-  resources: ["nodes"]
+  resources: ["nodes", "pods"]
   verbs: ["watch", "get", "list", "update", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -60,7 +60,7 @@ spec:
       - key: node.kubernetes.io/unschedulable
         effect: NoSchedule
       containers:
-      - image: alexrashed/skippy-daemon:0.3
+      - image: alexrashed/skippy-daemon:0.6
         name: skippy-daemon
         args: ['-d']
         volumeMounts:

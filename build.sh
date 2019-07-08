@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #!/bin/bash
-VERSION=${1:-0.3}
+VERSION=${1:-0.6}
 docker run --rm --privileged multiarch/qemu-user-static:register --reset
 
 docker build -t alexrashed/skippy-daemon:${VERSION}-amd64 -f Dockerfile.amd64 .
