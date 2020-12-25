@@ -4,7 +4,7 @@ metadata:
   name: skippy-daemon
   namespace: kube-system
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: skippy-daemon
@@ -13,7 +13,7 @@ rules:
   resources: ["nodes", "pods"]
   verbs: ["watch", "get", "list", "update", "patch"]
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: skippy-daemon
@@ -27,12 +27,15 @@ subjects:
   name: skippy-daemon
   namespace: kube-system
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: skippy-daemon-daemonset
   namespace: kube-system
 spec:
+  selector:
+    matchLabels:
+      name: skippy-daemon
   template:
     metadata:
       annotations:
